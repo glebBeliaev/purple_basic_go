@@ -2,136 +2,94 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
-const UsdToEuro float64 = 0.85
-const UsdToRub float64 = 85.25
+var perUSD = map[string]float64{
+	"USD": 1.0,
+	"EUR": 0.85,
+	"RUB": 85.25,
+}
 
 func main() {
 	for {
-		firstCurrency := getFirstCurrency()
-		amount := getAmount()
-		secondaryCurrency := getSecondCurrency(firstCurrency)
-		result := convert(firstCurrency, secondaryCurrency, amount)
-		fmt.Printf("Результат конвертации: %.2f %s = %.2f %s\n", amount, firstCurrency, result, secondaryCurrency)
+		from := promptCurrency("Какую валюту хотите конвертировать", "")
+		amount := promptAmount()
 
-		if checkRepeat() == "N" {
+		to := promptCurrency("В какую валюту конвертировать", from)
+		result := convert(from, to, amount)
+
+		fmt.Printf("Результат конвертации: %.2f %s = %.2f %s\n", amount, from, result, to)
+
+		if !promptYesNo("Повторить? (Y/N): ") {
 			break
-		} else {
-			continue
 		}
 	}
 }
 
-func getFirstCurrency() string {
-	var firstCurrency string
+func promptCurrency(question, exclude string) string {
+	opts := availableCurrencies(exclude)
+	optStr := strings.Join(opts, ", ")
+
 	for {
-		fmt.Print("Какую валюту хотите конвертировать? (USD, EUR, RUB): ")
-		fmt.Scan(&firstCurrency)
-		firstCurrency = strings.ToUpper(firstCurrency)
-		if firstCurrency != "USD" && firstCurrency != "EUR" && firstCurrency != "RUB" {
+		fmt.Printf("%s? (%s): ", question, optStr)
+		var cur string
+		fmt.Scan(&cur)
+		cur = strings.ToUpper(strings.TrimSpace(cur))
+
+		if _, ok := perUSD[cur]; !ok {
 			fmt.Println("Недопустимая валюта, повторите ввод")
 			continue
 		}
-		break
-	}
-	fmt.Println("Валюта", firstCurrency, "выбрана")
-	return firstCurrency
-}
-
-func getSecondCurrency(firstCurrency string) string {
-	const WhatToConvert = "В какую валюту конвертировать?"
-	var secondCurrency string
-	switch firstCurrency {
-	case "USD":
-		for {
-			fmt.Printf("%s (EUR, RUB): ", WhatToConvert)
-			fmt.Scan(&secondCurrency)
-			secondCurrency = strings.ToUpper(secondCurrency)
-			if secondCurrency != "EUR" && secondCurrency != "RUB" {
-				continue
-			}
-			break
+		if exclude != "" && cur == exclude {
+			fmt.Println("Нужно выбрать другую валюту, повторите ввод")
+			continue
 		}
-		return secondCurrency
-	case "EUR":
-		for {
-			fmt.Printf("%s (USD, RUB): ", WhatToConvert)
-			fmt.Scan(&secondCurrency)
-			secondCurrency = strings.ToUpper(secondCurrency)
-			if secondCurrency != "USD" && secondCurrency != "RUB" {
-				continue
-			}
-			break
-		}
-		return secondCurrency
-	default:
-		for {
-			fmt.Printf("%s (USD, EUR): ", WhatToConvert)
-			fmt.Scan(&secondCurrency)
-			secondCurrency = strings.ToUpper(secondCurrency)
-			if secondCurrency != "USD" && secondCurrency != "EUR" {
-				continue
-			}
-			break
-		}
-		return secondCurrency
+		return cur
 	}
 }
 
-func getAmount() float64 {
-	var amount float64
+func promptAmount() float64 {
 	for {
 		fmt.Print("Введите сумму: ")
-		fmt.Scan(&amount)
-		if amount <= 0 {
+		var a float64
+		fmt.Scan(&a)
+		if a <= 0 {
 			fmt.Println("Недопустимая сумма, повторите ввод")
 			continue
 		}
-		break
+		return a
 	}
-	return amount
 }
 
-func convert(firstCurrency, secondCurrency string, amount float64) float64 {
-	switch firstCurrency {
-	case "USD":
-		switch secondCurrency {
-		case "EUR":
-			return amount * UsdToEuro
-		case "RUB":
-			return amount * UsdToRub
-		}
-	case "EUR":
-		switch secondCurrency {
-		case "USD":
-			return amount / UsdToEuro
-		case "RUB":
-			return amount * (UsdToEuro / UsdToRub)
-		}
-	case "RUB":
-		switch secondCurrency {
-		case "USD":
-			return amount / UsdToRub
-		case "EUR":
-			return amount / (UsdToRub / UsdToEuro)
-		}
-	}
-	return 0
-}
-
-func checkRepeat() string {
-	var answer string
+func promptYesNo(question string) bool {
 	for {
-		fmt.Println("Повторить? (Y/N): ")
-		fmt.Scan(&answer)
-		answer = strings.ToUpper(answer)
-		if answer != "Y" && answer != "N" {
-			fmt.Println("Недопустимый ответ, повторите ввод")
-			continue
+		fmt.Print(question)
+		var ans string
+		fmt.Scan(&ans)
+		ans = strings.ToUpper(strings.TrimSpace(ans))
+		if ans == "Y" {
+			return true
 		}
-		break
+		if ans == "N" {
+			return false
+		}
+		fmt.Println("Недопустимый ответ, введите Y или N")
 	}
-	return answer
+}
+
+func convert(from, to string, amount float64) float64 {
+	return amount * perUSD[to] / perUSD[from]
+}
+
+func availableCurrencies(exclude string) []string {
+	keys := make([]string, 0, len(perUSD))
+	for k := range perUSD {
+		if k != exclude {
+			keys = append(keys, k)
+		}
+	}
+	slices.Sort(keys)
+	return keys
 }
