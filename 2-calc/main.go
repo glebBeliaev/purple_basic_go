@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -68,8 +69,12 @@ func calculateSum(numbers []int) int {
 }
 
 func calculateMedian(numbers []int) float64 {
-	if len(numbers)%2 == 0 {
-		return float64(numbers[len(numbers)/2]+numbers[len(numbers)/2-1]) / 2
+	nums := append([]int(nil), numbers...)
+	sort.Ints(nums)
+	n := len(nums)
+	if n%2 == 0 {
+		mid := n / 2
+		return float64(nums[mid-1]+nums[mid]) / 2
 	}
-	return float64(numbers[len(numbers)/2])
+	return float64(nums[n/2])
 }
