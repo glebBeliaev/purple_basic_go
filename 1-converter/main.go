@@ -6,19 +6,23 @@ import (
 	"strings"
 )
 
-var perUSD = map[string]float64{
-	"USD": 1.0,
-	"EUR": 0.85,
-	"RUB": 85.25,
-}
-
 func main() {
+	rates := map[string]float64{
+		"USD": 1.0,
+		"EUR": 0.85,
+		"RUB": 85.25,
+	}
+
 	for {
-		from := promptCurrency("Какую валюту хотите конвертировать", "")
+		from := promptCurrency("Какую валюту хотите конвертировать", "", &rates)
 		amount := promptAmount()
 
-		to := promptCurrency("В какую валюту конвертировать", from)
-		result := convert(from, to, amount)
+		to := promptCurrency("В какую валюту конвертировать", from, &rates)
+		result, ok := convert(from, to, amount, &rates)
+		if !ok {
+			fmt.Println("Неизвестная валюта, проверьте ввод")
+			continue
+		}
 
 		fmt.Printf("Результат конвертации: %.2f %s = %.2f %s\n", amount, from, result, to)
 
@@ -28,9 +32,11 @@ func main() {
 	}
 }
 
-func promptCurrency(question, exclude string) string {
-	opts := availableCurrencies(exclude)
+func promptCurrency(question, exclude string, rates *map[string]float64) string {
+	opts := availableCurrencies(exclude, rates)
 	optStr := strings.Join(opts, ", ")
+
+	r := *rates
 
 	for {
 		fmt.Printf("%s? (%s): ", question, optStr)
@@ -38,7 +44,7 @@ func promptCurrency(question, exclude string) string {
 		fmt.Scan(&cur)
 		cur = strings.ToUpper(strings.TrimSpace(cur))
 
-		if _, ok := perUSD[cur]; !ok {
+		if _, ok := r[cur]; !ok {
 			fmt.Println("Недопустимая валюта, повторите ввод")
 			continue
 		}
@@ -79,13 +85,26 @@ func promptYesNo(question string) bool {
 	}
 }
 
-func convert(from, to string, amount float64) float64 {
-	return amount * perUSD[to] / perUSD[from]
+func convert(from, to string, amount float64, rates *map[string]float64) (float64, bool) {
+	if rates == nil {
+		return 0, false
+	}
+	r := *rates
+	f, ok1 := r[from]
+	t, ok2 := r[to]
+	if !ok1 || !ok2 {
+		return 0, false
+	}
+	return amount * t / f, true
 }
 
-func availableCurrencies(exclude string) []string {
-	keys := make([]string, 0, len(perUSD))
-	for k := range perUSD {
+func availableCurrencies(exclude string, rates *map[string]float64) []string {
+	if rates == nil {
+		return nil
+	}
+	r := *rates
+	keys := make([]string, 0, len(r))
+	for k := range r {
 		if k != exclude {
 			keys = append(keys, k)
 		}
