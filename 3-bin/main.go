@@ -2,21 +2,31 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 )
 
 type Bin struct {
-	id       string
-	private  bool
-	createAt time.Time
-	name     string
+	id        string
+	private   bool
+	createdAt time.Time
+	name      string
 }
 
-func (b *Bin) NewBin() {
-	fmt.Scan(&b.id)
-	fmt.Scan(&b.private)
-	b.createAt = time.Now()
-	fmt.Scan(&b.name)
+func (b *Bin) NewBin(name string, private bool) {
+	b.id = b.generateId()
+	b.private = private
+	b.createdAt = time.Now()
+	b.name = name
+}
+
+func (b *Bin) generateId() string {
+	var letterRuns = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	res := make([]rune, 8)
+	for i := range res {
+		res[i] = letterRuns[rand.Intn(len(letterRuns))]
+	}
+	return string(res)
 }
 
 type BinList struct {
@@ -31,7 +41,20 @@ func main() {
 	binList := BinList{}
 	bin := Bin{}
 	fmt.Println("Введите данные")
-	bin.NewBin()
+	name := promtData("Введите название: ")
+	privateReq := promtData("Приватный бин? (Y/N)")
+	private := false
+	if privateReq == "y" || privateReq == "Y" {
+		private = true
+	}
+	bin.NewBin(name, private)
 	binList.AddBin(bin)
 	fmt.Println(binList.bins)
+}
+
+func promtData(promt string) string {
+	var data string
+	fmt.Print(promt)
+	fmt.Scanln(&data)
+	return data
 }
