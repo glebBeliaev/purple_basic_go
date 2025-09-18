@@ -1,19 +1,19 @@
 package file
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func ReadFile(name string) ([]byte, error) {
+	if filepath.Ext(name) != ".json" {
+		return nil, fmt.Errorf("файл %s не имеет расширение .json", name)
+	}
 	data, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
-	}
-	if !json.Valid(data) {
-		return nil, fmt.Errorf("файл %s не является корректным JSON", name)
 	}
 	return data, nil
 }
