@@ -2,7 +2,6 @@ package account
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"net/url"
 
@@ -10,15 +9,15 @@ import (
 )
 
 type Account struct {
-	login    string
-	password string
-	url      string
+	Login    string `json:"login"`
+	Password string `json:"password"`
+	Url      string `json:"url"`
 }
 
 func (acc *Account) OutputData() {
-	color.Green("Логин: %s", acc.login)
-	fmt.Println("Пароль:", acc.password)
-	fmt.Println("URL:", acc.url)
+	color.Green("Логин: %s", acc.Login)
+	color.Green("Пароль: %s", acc.Password)
+	color.Green("URL: %s", acc.Url)
 }
 
 func (acc *Account) generatePassword(n int) {
@@ -27,7 +26,7 @@ func (acc *Account) generatePassword(n int) {
 	for i := range res {
 		res[i] = letterRuns[rand.Intn(len(letterRuns))]
 	}
-	acc.password = string(res)
+	acc.Password = string(res)
 }
 
 func NewAccount(login, password, urlString string) (*Account, error) {
@@ -39,11 +38,11 @@ func NewAccount(login, password, urlString string) (*Account, error) {
 		return nil, errors.New("INVALID_URL")
 	}
 	newAcc := &Account{
-		login:    login,
-		password: password,
-		url:      urlString,
+		Login:    login,
+		Password: password,
+		Url:      urlString,
 	}
-	if newAcc.password == "" {
+	if newAcc.Password == "" {
 		newAcc.generatePassword(8)
 	}
 	return newAcc, nil
