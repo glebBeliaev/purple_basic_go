@@ -3,7 +3,7 @@ package bins
 import (
 	"encoding/json"
 	"math/rand"
-	"purple_basic_go/password/files"
+	"purple_basic_go/3-bin/file"
 	"time"
 
 	"github.com/fatih/color"
@@ -41,7 +41,7 @@ func (b *BinList) AddBin(bin Bin) {
 }
 
 func NewBins() *BinList {
-	file, err := files.ReadFile("password/data.json")
+	file, err := file.ReadFile("password/data.json")
 	if err != nil {
 		return &BinList{
 			Bins: []Bin{},
