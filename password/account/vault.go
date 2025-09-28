@@ -2,17 +2,25 @@ package account
 
 import (
 	"encoding/json"
+	"purple_basic_go/password/output"
 	"strings"
 
-	"purple_basic_go/password/files"
 	"time"
-
-	"github.com/fatih/color"
 )
+
+type Db interface {
+	Read() ([]byte, error)
+	Write([]byte)
+}
 
 type Vault struct {
 	Accounts  []Account `json:"accounts"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type VaultWithDb struct {
+	Vault
+	db Db
 }
 
 func (vault *Vault) ToBytes() ([]byte, error) {
@@ -34,7 +42,7 @@ func (vault *Vault) FindAccountsByUrl(url string) []Account {
 	return accounts
 }
 
-func (vault *Vault) DeleteAccountsByUrl(url string) bool {
+func (vault *VaultWithDb) DeleteAccountsByUrl(url string) bool {
 	var accounts []Account
 	isDeleted := false
 	for _, acc := range vault.Accounts {
@@ -50,38 +58,45 @@ func (vault *Vault) DeleteAccountsByUrl(url string) bool {
 	return isDeleted
 }
 
-func (vault *Vault) AddAccount(account Account) {
+func (vault *VaultWithDb) AddAccount(account Account) {
 	vault.Accounts = append(vault.Accounts, account)
 	vault.Save()
 }
 
-func NewVault() *Vault {
-	db := files.NewJsonDb("password/data.json")
+func NewVault(db Db) *VaultWithDb {
 	file, err := db.Read()
 	if err != nil {
-		return &Vault{
-			Accounts:  []Account{},
-			UpdatedAt: time.Now(),
+		return &VaultWithDb{
+			Vault: Vault{
+				Accounts:  []Account{},
+				UpdatedAt: time.Now(),
+			},
+			db: db,
 		}
 	}
 	var vault Vault
 	err = json.Unmarshal(file, &vault)
 	if err != nil {
-		color.Red("Не удалось разобрать файл JSON")
-		return &Vault{
-			Accounts:  []Account{},
-			UpdatedAt: time.Now(),
+		output.PrintError("Не удалось разобрать файл JSON")
+		return &VaultWithDb{
+			Vault: Vault{
+				Accounts:  []Account{},
+				UpdatedAt: time.Now(),
+			},
+			db: db,
 		}
 	}
-	return &vault
+	return &VaultWithDb{
+		Vault: vault,
+		db:    db,
+	}
 }
 
-func (vault *Vault) Save() {
+func (vault *VaultWithDb) Save() {
 	vault.UpdatedAt = time.Now()
 	data, err := vault.ToBytes()
 	if err != nil {
-		color.Red("Не удалось преобразовать")
+		output.PrintError("Не удалось преобразовать")
 	}
-	db := files.NewJsonDb("password/data.json")
-	db.Write(data)
+	vault.db.Write(data)
 }
