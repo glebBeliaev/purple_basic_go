@@ -12,13 +12,13 @@ func SaveBins(binList *bins.BinList, filename string) error {
 	if err != nil {
 		return err
 	}
-	file.WriteFile(data, filename)
+	file.Write(data, filename)
 	return nil
 }
 
 // LoadBins - загрузка списка bin из JSON файла
 func LoadBins(filename string) (*bins.BinList, error) {
-	data, err := file.ReadFile(filename)
+	data, err := file.Read(filename)
 	if err != nil {
 		return &bins.BinList{Bins: []bins.Bin{}}, err
 	}

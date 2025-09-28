@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func ReadFile(name string) ([]byte, error) {
+func Read(name string) ([]byte, error) {
 	if filepath.Ext(name) != ".json" {
 		return nil, fmt.Errorf("файл %s не имеет расширение .json", name)
 	}
@@ -18,7 +18,7 @@ func ReadFile(name string) ([]byte, error) {
 	return data, nil
 }
 
-func WriteFile(content []byte, name string) {
+func Write(content []byte, name string) {
 	file, err := os.Create(name)
 	if err != nil {
 		log.Fatal(err)

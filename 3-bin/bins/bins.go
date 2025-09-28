@@ -41,7 +41,7 @@ func (b *BinList) AddBin(bin Bin) {
 }
 
 func NewBins() *BinList {
-	file, err := file.ReadFile("password/data.json")
+	file, err := file.Read("password/data.json")
 	if err != nil {
 		return &BinList{
 			Bins: []Bin{},
