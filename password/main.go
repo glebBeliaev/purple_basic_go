@@ -5,9 +5,17 @@ import (
 	"purple_basic_go/password/account"
 	"purple_basic_go/password/files"
 	"purple_basic_go/password/output"
+	"strings"
 
 	"github.com/fatih/color"
 )
+
+var menu = map[string]func(*account.VaultWithDb){
+	"1": createAccount,
+	"2": findAccountByUrl,
+	"3": findAccountByLogin,
+	"4": deleteAccount,
+}
 
 func main() {
 	fmt.Println("_____Password Manager_____")
@@ -15,50 +23,49 @@ func main() {
 	vault := account.NewVault(files.NewJsonDb("password/data.json"))
 Menu:
 	for {
-		variant := promtData([]string{
+		variant := promtData(
 			"1 - Создать аккаунт",
-			"2 - Найти аккаунт",
-			"3 - Удалить аккаунт",
-			"4 - Выход",
-			"Выберите вариант"})
-		switch variant {
-		case "1":
-			createAccount(vault)
-		case "2":
-			findAccount(vault)
-		case "3":
-			deleteAccount(vault)
-		default:
+			"2 - Найти аккаунт по url",
+			"3 - Найти аккаунт по логину",
+			"4 - Удалить аккаунт",
+			"5 - Выход",
+			"Выберите вариант")
+		menuFunc := menu[variant]
+		if menuFunc == nil {
 			break Menu
 		}
+		menuFunc(vault)
 	}
 }
 
-func getMenu() int {
-	var variant int
-	fmt.Println("Выберите вариант:")
-	fmt.Println("1 - Создать аккаунт")
-	fmt.Println("2 - Найти аккаунт")
-	fmt.Println("3 - Удалить аккаунт")
-	fmt.Println("4 - Выход")
-	fmt.Print("")
-	fmt.Scan(&variant)
-	return variant
+func findAccountByUrl(vault *account.VaultWithDb) {
+	url := promtData("Введите url для поиска")
+	accounts := vault.FindAccounts(url, func(acc account.Account, str string) bool {
+		return strings.Contains(acc.Url, str)
+	})
+	outputResult(&accounts)
 }
 
-func findAccount(vault *account.VaultWithDb) {
-	url := promtData([]string{"Введите url для поиска"})
-	accounts := vault.FindAccountsByUrl(url)
-	if len(accounts) == 0 {
+func findAccountByLogin(vault *account.VaultWithDb) {
+	login := promtData("Введите url для поиска")
+	accounts := vault.FindAccounts(login, func(acc account.Account, str string) bool {
+		return strings.Contains(acc.Login, str)
+	})
+	outputResult(&accounts)
+}
+
+func outputResult(accounts *[]account.Account) {
+	if len(*accounts) == 0 {
 		output.PrintError("Ничего не нашлось")
 	}
-	for _, account := range accounts {
+	for _, account := range *accounts {
 		account.OutputData()
 	}
+
 }
 
 func deleteAccount(vault *account.VaultWithDb) {
-	url := promtData([]string{"Введите url для поиска"})
+	url := promtData("Введите url для поиска")
 	isDeleted := vault.DeleteAccountsByUrl(url)
 	if isDeleted {
 		color.Green("Удалено")
@@ -68,9 +75,9 @@ func deleteAccount(vault *account.VaultWithDb) {
 }
 
 func createAccount(vault *account.VaultWithDb) {
-	login := promtData([]string{"Введите логин"})
-	password := promtData([]string{"Введите пароль"})
-	url := promtData([]string{"Введите url"})
+	login := promtData("Введите логин")
+	password := promtData("Введите пароль")
+	url := promtData("Введите url")
 
 	myAccount, err := account.NewAccount(login, password, url)
 	if err != nil {
@@ -80,7 +87,7 @@ func createAccount(vault *account.VaultWithDb) {
 	vault.AddAccount(*myAccount)
 }
 
-func promtData[T any](promt []T) string {
+func promtData(promt ...any) string {
 	for i, line := range promt {
 		if i == len(promt)-1 {
 			fmt.Printf("%v: ", line)

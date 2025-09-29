@@ -31,12 +31,12 @@ func (vault *Vault) ToBytes() ([]byte, error) {
 	return file, nil
 }
 
-func (vault *Vault) FindAccountsByUrl(url string) []Account {
+func (vault *Vault) FindAccounts(str string, checker func(Account, string) bool) []Account {
 	var accounts []Account
-	for _, acc := range vault.Accounts {
-		isMatched := strings.Contains(acc.Url, url)
+	for _, account := range vault.Accounts {
+		isMatched := checker(account, str)
 		if isMatched {
-			accounts = append(accounts, acc)
+			accounts = append(accounts, account)
 		}
 	}
 	return accounts
