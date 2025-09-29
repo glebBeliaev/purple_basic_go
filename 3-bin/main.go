@@ -2,28 +2,42 @@ package main
 
 import (
 	"fmt"
+
 	"purple_basic_go/3-bin/bins"
+	"purple_basic_go/3-bin/file"
+	"purple_basic_go/3-bin/interfaces"
+	"purple_basic_go/3-bin/storage"
 )
 
-func main() {
-
-	binList := bins.BinList{}
-	bin := bins.Bin{}
-	fmt.Println("Введите данные")
-	name := promtData("Введите название: ")
-	privateReq := promtData("Приватный бин? (Y/N)")
-	private := false
-	if privateReq == "y" || privateReq == "Y" {
-		private = true
-	}
-	bin.NewBin(name, private)
-	binList.AddBin(bin)
-	fmt.Println(binList.Bins)
+type App struct {
+	fileManager interfaces.FileManager
+	storage     interfaces.BinStorage
+	binService  interfaces.BinService
 }
 
-func promtData(promt string) string {
-	var data string
-	fmt.Print(promt)
-	fmt.Scanln(&data)
-	return data
+// NewApp собирает зависимости.
+// dataFile — путь к JSON-файлу, где хранится список (например, "password/data.json").
+func NewApp(dataFile string) *App {
+	fm := file.LocalFileManager{}
+	st := storage.JSONStorage{FileManager: fm}
+	bs := bins.NewService(st, dataFile)
+
+	return &App{
+		fileManager: fm,
+		storage:     st,
+		binService:  bs,
+	}
+}
+
+func main() {
+	const dataFile = "password/data.json"
+
+	app := NewApp(dataFile)
+
+	// Пример использования
+	b := app.binService.CreateBin("demo", false)
+	if err := app.binService.AddBin(b); err != nil {
+		panic(err)
+	}
+	fmt.Println("bins:", app.binService.GetBins())
 }

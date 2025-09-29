@@ -1,67 +1,52 @@
 package bins
 
 import (
-	"encoding/json"
-	"math/rand"
-	"purple_basic_go/3-bin/file"
-	"time"
-
-	"github.com/fatih/color"
+	"errors"
+	"purple_basic_go/3-bin/interfaces"
+	"purple_basic_go/3-bin/model"
 )
 
-type Bin struct {
-	Id        string    `json:"id"`
-	Private   bool      `json:"private"`
-	CreatedAt time.Time `json:"created_at"`
-	Name      string    `json:"name"`
+// Service реализует бизнес-логику и соответствует interfaces.BinService.
+type Service struct {
+	store    interfaces.BinStorage
+	filename string
+	data     *model.BinList
 }
 
-func (b *Bin) NewBin(name string, private bool) {
-	b.Id = b.generateId()
-	b.Private = private
-	b.CreatedAt = time.Now()
-	b.Name = name
-}
-
-func (b *Bin) generateId() string {
-	var letterRuns = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	res := make([]rune, 8)
-	for i := range res {
-		res[i] = letterRuns[rand.Intn(len(letterRuns))]
+// NewService создаёт сервис, пытаясь загрузить текущее состояние из хранилища.
+// Если файла нет или он пустой — работаем с пустым списком.
+func NewService(store interfaces.BinStorage, filename string) *Service {
+	list, _ := store.LoadBins(filename) // ошибку на старте проглатываем — позволяем начать "с нуля"
+	if list == nil {
+		list = &model.BinList{Bins: []model.Bin{}}
 	}
-	return string(res)
-}
-
-type BinList struct {
-	Bins []Bin
-}
-
-func (b *BinList) AddBin(bin Bin) {
-	b.Bins = append(b.Bins, bin)
-}
-
-func NewBins() *BinList {
-	file, err := file.ReadFile("password/data.json")
-	if err != nil {
-		return &BinList{
-			Bins: []Bin{},
-		}
+	return &Service{
+		store:    store,
+		filename: filename,
+		data:     list,
 	}
-	var binList BinList
-	err = json.Unmarshal(file, &binList)
-	if err != nil {
-		color.Red("Не удалось разобрать файл JSON")
-		return &BinList{
-			Bins: []Bin{},
-		}
-	}
-	return &binList
 }
 
-func (bin *Bin) ToBytes() ([]byte, error) {
-	file, err := json.Marshal(bin)
-	if err != nil {
-		return nil, err
+// CreateBin — фабричный метод: создаёт Bin, но не добавляет в список.
+func (s *Service) CreateBin(name string, private bool) model.Bin {
+	return model.Bin{Name: name, Private: private}
+}
+
+// AddBin — добавляет Bin в список и сразу сохраняет состояние.
+func (s *Service) AddBin(b model.Bin) error {
+	if s == nil || s.data == nil {
+		return errors.New("service not initialized")
 	}
-	return file, nil
+	s.data.Bins = append(s.data.Bins, b)
+	return s.store.SaveBins(s.data, s.filename)
+}
+
+// GetBins — отдаёт срез (копию) текущих бинов.
+func (s *Service) GetBins() []model.Bin {
+	if s == nil || s.data == nil {
+		return nil
+	}
+	out := make([]model.Bin, len(s.data.Bins))
+	copy(out, s.data.Bins)
+	return out
 }

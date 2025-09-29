@@ -2,32 +2,32 @@ package storage
 
 import (
 	"encoding/json"
-	"purple_basic_go/3-bin/bins"
-	"purple_basic_go/3-bin/file"
+	"purple_basic_go/3-bin/interfaces"
+	"purple_basic_go/3-bin/model"
 )
 
-// SaveBins - сохранение списка bin в JSON файл
-func SaveBins(binList *bins.BinList, filename string) error {
-	data, err := json.Marshal(binList)
+// JSONStorage — хранит BinList в JSON-файле, используя FileManager.
+type JSONStorage struct {
+	FileManager interfaces.FileManager
+}
+
+func (s JSONStorage) SaveBins(binList *model.BinList, filename string) error {
+	data, err := json.MarshalIndent(binList, "", "  ")
 	if err != nil {
 		return err
 	}
-	file.WriteFile(data, filename)
-	return nil
+	return s.FileManager.Write(data, filename)
 }
 
-// LoadBins - загрузка списка bin из JSON файла
-func LoadBins(filename string) (*bins.BinList, error) {
-	data, err := file.ReadFile(filename)
+func (s JSONStorage) LoadBins(filename string) (*model.BinList, error) {
+	data, err := s.FileManager.Read(filename)
 	if err != nil {
-		return &bins.BinList{Bins: []bins.Bin{}}, err
+		// Возвращаем пустой список и саму ошибку наружу — вызывающий решит, критично это или нет.
+		return &model.BinList{Bins: []model.Bin{}}, err
 	}
-
-	var binList bins.BinList
-	err = json.Unmarshal(data, &binList)
-	if err != nil {
-		return &bins.BinList{Bins: []bins.Bin{}}, err
+	var out model.BinList
+	if err := json.Unmarshal(data, &out); err != nil {
+		return &model.BinList{Bins: []model.Bin{}}, err
 	}
-
-	return &binList, nil
+	return &out, nil
 }
