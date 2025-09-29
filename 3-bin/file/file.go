@@ -2,32 +2,23 @@ package file
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func Read(name string) ([]byte, error) {
+// LocalFileManager — простая реализация FileManager поверх локальной ФС.
+type LocalFileManager struct{}
+
+// Read читает весь файл в []byte.
+// Для учебного примера слегка проверяем расширение, чтобы не путаться с другими файлами.
+func (LocalFileManager) Read(name string) ([]byte, error) {
 	if filepath.Ext(name) != ".json" {
-		return nil, fmt.Errorf("файл %s не имеет расширение .json", name)
+		return nil, fmt.Errorf("expected .json file, got: %s", name)
 	}
-	data, err := os.ReadFile(name)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return os.ReadFile(name)
 }
 
-func Write(content []byte, name string) {
-	file, err := os.Create(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = file.Write(content)
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	fmt.Println("File created successfully")
+// Write пишет []byte в файл с правами 0644.
+func (LocalFileManager) Write(content []byte, name string) error {
+	return os.WriteFile(name, content, 0o644)
 }
