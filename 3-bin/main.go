@@ -3,7 +3,26 @@ package main
 import (
 	"fmt"
 	"purple_basic_go/3-bin/bins"
+	"purple_basic_go/3-bin/interfaces"
 )
+
+type App struct {
+	fileManager interfaces.FileManager
+	storage     interfaces.BinService
+	binService  interfaces.BinService
+}
+
+func NewApp() *App {
+	fileManager := &file.FileManager{}
+	storage := &storage.BinStorage{FileManager: fileManager}
+	binService := &bins.BinService{Storage: storage}
+
+	return &App{
+		fileManager: fileManager,
+		storage:     storage,
+		binService:  binService,
+	}
+}
 
 func main() {
 
