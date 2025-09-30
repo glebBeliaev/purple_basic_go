@@ -9,22 +9,30 @@ import (
 
 func main() {
 	operation := selectOperation()
-	numbers := getNumbers()
-	numbersSlice := createSlice(numbers)
-	switch operation {
-	case "AVG":
-		fmt.Println("Среднее:", calculateAverage(numbersSlice))
-	case "SUM":
-		fmt.Println("Сумма:", calculateSum(numbersSlice))
-	case "MED":
-		fmt.Println("Медиана:", calculateMedian(numbersSlice))
+	raw := getNumbers()
+	numbers := createSlice(raw)
+	if len(numbers) == 0 {
+		fmt.Println("Нет чисел для расчёта.")
+		return
 	}
 
+	// Карта операций: каждая функция замыкает numbers
+	ops := map[string]func(){
+		"AVG": func() { fmt.Println("Среднее:", calculateAverage(numbers)) },
+		"SUM": func() { fmt.Println("Сумма:", calculateSum(numbers)) },
+		"MED": func() { fmt.Println("Медиана:", calculateMedian(numbers)) },
+	}
+
+	if run, ok := ops[strings.ToUpper(operation)]; ok {
+		run()
+	} else {
+		fmt.Println("Неизвестная операция:", operation)
+	}
 }
 
 func selectOperation() string {
 	var operation string
-	fmt.Print("Выберите операцию (AVG - среднее, SUM - сумму, MED - медиану):")
+	fmt.Print("Выберите операцию (AVG - среднее, SUM - сумму, MED - медиану): ")
 	fmt.Scan(&operation)
 	return operation
 }
@@ -37,23 +45,24 @@ func getNumbers() string {
 }
 
 func createSlice(num string) []int {
-	split := strings.Split(num, ",")
-
-	var numbers []int
-
-	for _, s := range split {
-		s, err := strconv.Atoi(strings.TrimSpace(s))
+	parts := strings.Split(num, ",")
+	out := make([]int, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.Atoi(strings.TrimSpace(p))
 		if err != nil {
-			fmt.Println("Ошибка конвертации:", err)
+			fmt.Println("Ошибка конвертации, пропущено:", p)
 			continue
 		}
-		numbers = append(numbers, s)
+		out = append(out, n)
 	}
-	return numbers
+	return out
 }
 
 func calculateAverage(numbers []int) float64 {
-	var sum int
+	if len(numbers) == 0 {
+		return 0
+	}
+	sum := 0
 	for _, n := range numbers {
 		sum += n
 	}
@@ -61,7 +70,7 @@ func calculateAverage(numbers []int) float64 {
 }
 
 func calculateSum(numbers []int) int {
-	var sum int
+	sum := 0
 	for _, n := range numbers {
 		sum += n
 	}
@@ -69,7 +78,10 @@ func calculateSum(numbers []int) int {
 }
 
 func calculateMedian(numbers []int) float64 {
-	nums := append([]int(nil), numbers...)
+	if len(numbers) == 0 {
+		return 0
+	}
+	nums := append([]int(nil), numbers...) // копия
 	sort.Ints(nums)
 	n := len(nums)
 	if n%2 == 0 {
