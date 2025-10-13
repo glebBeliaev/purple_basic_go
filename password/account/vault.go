@@ -2,10 +2,13 @@ package account
 
 import (
 	"encoding/json"
+	"purple_basic_go/password/encrypter"
 	"purple_basic_go/password/output"
 	"strings"
 
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type Db interface {
@@ -20,7 +23,8 @@ type Vault struct {
 
 type VaultWithDb struct {
 	Vault
-	db Db
+	db  Db
+	enc encrypter.Encrypter
 }
 
 func (vault *Vault) ToBytes() ([]byte, error) {
@@ -63,7 +67,7 @@ func (vault *VaultWithDb) AddAccount(account Account) {
 	vault.Save()
 }
 
-func NewVault(db Db) *VaultWithDb {
+func NewVault(db Db, enc encrypter.Encrypter) *VaultWithDb {
 	file, err := db.Read()
 	if err != nil {
 		return &VaultWithDb{
@@ -71,32 +75,38 @@ func NewVault(db Db) *VaultWithDb {
 				Accounts:  []Account{},
 				UpdatedAt: time.Now(),
 			},
-			db: db,
+			db:  db,
+			enc: enc,
 		}
 	}
+	data := enc.Decrypt(file)
 	var vault Vault
-	err = json.Unmarshal(file, &vault)
+	err = json.Unmarshal(data, &vault)
+	color.Cyan("Найдено %d аккаунтов", len(vault.Accounts))
 	if err != nil {
-		output.PrintError("Не удалось разобрать файл JSON")
+		output.PrintError("Не удалось разобрать файл")
 		return &VaultWithDb{
 			Vault: Vault{
 				Accounts:  []Account{},
 				UpdatedAt: time.Now(),
 			},
-			db: db,
+			db:  db,
+			enc: enc,
 		}
 	}
 	return &VaultWithDb{
 		Vault: vault,
 		db:    db,
+		enc:   enc,
 	}
 }
 
 func (vault *VaultWithDb) Save() {
 	vault.UpdatedAt = time.Now()
 	data, err := vault.ToBytes()
+	encData := vault.enc.Encrypt(data)
 	if err != nil {
 		output.PrintError("Не удалось преобразовать")
 	}
-	vault.db.Write(data)
+	vault.db.Write(encData)
 }

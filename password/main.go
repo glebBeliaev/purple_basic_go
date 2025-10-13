@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"purple_basic_go/password/account"
+	"purple_basic_go/password/encrypter"
 	"purple_basic_go/password/files"
 	"purple_basic_go/password/output"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/joho/godotenv"
 )
 
 var menu = map[string]func(*account.VaultWithDb){
@@ -18,9 +20,14 @@ var menu = map[string]func(*account.VaultWithDb){
 }
 
 func main() {
+	err := godotenv.Load("password/.env")
+	if err != nil {
+		output.PrintError("Не удалось загрузить переменные окружения")
+	}
+
 	fmt.Println("_____Password Manager_____")
 	fmt.Println(" ")
-	vault := account.NewVault(files.NewJsonDb("password/data.json"))
+	vault := account.NewVault(files.NewJsonDb("password/data.vault"), *encrypter.NewEncrypter())
 Menu:
 	for {
 		variant := promtData(

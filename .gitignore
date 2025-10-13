@@ -1,1 +1,3 @@
 password/data.json
+.env
+*.vault
