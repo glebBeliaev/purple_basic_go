@@ -2,6 +2,7 @@ package model
 
 // Bin — сущность "контейнер"
 type Bin struct {
+	ID      string `json:"id,omitempty"` // id jsonbin'а
 	Name    string `json:"name"`
 	Private bool   `json:"private"`
 }

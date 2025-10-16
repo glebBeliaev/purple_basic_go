@@ -1,6 +1,10 @@
 package interfaces
 
-import "purple_basic_go/3-bin/model"
+import (
+	"context"
+
+	"purple_basic_go/3-bin/model"
+)
 
 // FileManager — абстракция над чтением/записью байтов в файл
 type FileManager interface {
@@ -16,7 +20,15 @@ type BinStorage interface {
 
 // BinService — операции над доменной логикой "Bin"
 type BinService interface {
+	// Локальные операции
 	CreateBin(name string, private bool) model.Bin
 	AddBin(bin model.Bin) error
 	GetBins() []model.Bin
+	RemoveByID(id string) error
+
+	// Удалённые операции (jsonbin)
+	CreateRemote(ctx context.Context, name string, private bool, data map[string]any) (string, error)
+	GetRemote(ctx context.Context, id string) (*model.Bin, error)
+	UpdateRemote(ctx context.Context, id string, data map[string]any) error
+	DeleteRemote(ctx context.Context, id string) error
 }
